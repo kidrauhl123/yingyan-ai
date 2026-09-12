@@ -12,6 +12,7 @@ import {
   LoaderCircle,
   LocateFixed,
   Palette,
+  ImagePlus,
   PenLine,
   Sparkles,
   WandSparkles,
@@ -56,7 +57,18 @@ type HistoryEntry = {
   text: string;
   visualType: VisualType;
   accent: string;
+  brandName: string;
+  logoDataUrl: string;
+  fontChoice: FontChoice;
 };
+
+type FontChoice = "modern" | "humanist" | "serif";
+
+const fontOptions: { value: FontChoice; label: string; family: string }[] = [
+  { value: "modern", label: "现代黑体", family: '"PingFang SC", "Microsoft YaHei", sans-serif' },
+  { value: "humanist", label: "人文圆体", family: '"Hiragino Sans GB", "Microsoft YaHei", sans-serif' },
+  { value: "serif", label: "书面宋体", family: '"Songti SC", "STSong", serif' },
+];
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
@@ -80,7 +92,11 @@ export function VisualStudio() {
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [brandOpen, setBrandOpen] = useState(false);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [brandName, setBrandName] = useState("映言");
+  const [logoDataUrl, setLogoDataUrl] = useState("");
+  const [fontChoice, setFontChoice] = useState<FontChoice>("modern");
   const svgRef = useRef<SVGSVGElement | null>(null);
   const storageReadyRef = useRef(false);
 
@@ -95,6 +111,9 @@ export function VisualStudio() {
         if (state.audience) setAudience(state.audience);
         if (state.visualType) setVisualType(state.visualType);
         if (state.accent) setAccent(state.accent);
+        if (state.brandName) setBrandName(state.brandName);
+        if (state.logoDataUrl) setLogoDataUrl(state.logoDataUrl);
+        if (state.fontChoice) setFontChoice(state.fontChoice);
         const storedHistory = localStorage.getItem("yingyan-history");
         if (storedHistory) setHistory(JSON.parse(storedHistory));
         /* eslint-enable react-hooks/set-state-in-effect */
@@ -107,14 +126,14 @@ export function VisualStudio() {
 
   useEffect(() => {
     if (!storageReadyRef.current) return;
-    localStorage.setItem("yingyan-latest", JSON.stringify({ text, spec, audience, visualType, accent }));
+    localStorage.setItem("yingyan-latest", JSON.stringify({ text, spec, audience, visualType, accent, brandName, logoDataUrl, fontChoice }));
     const showTimer = window.setTimeout(() => setSaved(true), 0);
     const timer = window.setTimeout(() => setSaved(false), 900);
     return () => {
       window.clearTimeout(showTimer);
       window.clearTimeout(timer);
     };
-  }, [text, spec, audience, visualType, accent]);
+  }, [text, spec, audience, visualType, accent, brandName, logoDataUrl, fontChoice]);
 
   function addHistory(nextSpec: VisualSpec, nextText = text, nextType = visualType) {
     setHistory((current) => {
@@ -126,6 +145,9 @@ export function VisualStudio() {
         text: nextText,
         visualType: nextType,
         accent,
+        brandName,
+        logoDataUrl,
+        fontChoice,
       };
       const next = [entry, ...current].slice(0, 12);
       localStorage.setItem("yingyan-history", JSON.stringify(next));
@@ -138,6 +160,9 @@ export function VisualStudio() {
     setSpec(entry.spec);
     setVisualType(entry.visualType);
     setAccent(entry.accent);
+    setBrandName(entry.brandName || "映言");
+    setLogoDataUrl(entry.logoDataUrl || "");
+    setFontChoice(entry.fontChoice || "modern");
     setSelectedItem(null);
     setHistoryOpen(false);
   }
@@ -236,6 +261,24 @@ export function VisualStudio() {
     image.src = url;
   }
 
+  function loadLogo(file: File | undefined) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Logo 需要使用图片文件。");
+      return;
+    }
+    if (file.size > 1_000_000) {
+      setError("Logo 请控制在 1 MB 以内。");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setLogoDataUrl(String(reader.result || ""));
+      setError("");
+    };
+    reader.readAsDataURL(file);
+  }
+
   return (
     <main className="studio-shell">
       <header className="topbar">
@@ -313,14 +356,14 @@ export function VisualStudio() {
                 </button>
               ))}
             </div>
-            <div className="color-tools"><Palette size={16} />{accents.map((color) => (
+            <div className="color-tools"><button className="brand-tool" type="button" onClick={() => setBrandOpen(true)}><Palette size={15} /> 品牌</button>{accents.map((color) => (
               <button key={color} type="button" aria-label={`选择颜色 ${color}`} className={accent === color ? "color-dot color-dot--active" : "color-dot"} style={{ background: color }} onClick={() => setAccent(color)} />
             ))}</div>
           </div>
 
           <div className="canvas-stage">
             <div className="canvas-paper">
-              <VisualCanvas spec={spec} type={visualType} accent={accent} selectedItemId={selectedItem?.id ?? null} onSelect={setSelectedItem} svgRef={svgRef} />
+              <VisualCanvas spec={spec} type={visualType} accent={accent} brandName={brandName} logoDataUrl={logoDataUrl} fontFamily={fontOptions.find((option) => option.value === fontChoice)?.family || fontOptions[0].family} selectedItemId={selectedItem?.id ?? null} onSelect={setSelectedItem} svgRef={svgRef} />
             </div>
           </div>
 
@@ -366,6 +409,19 @@ export function VisualStudio() {
                 ))}
               </div>
             ) : <div className="history-empty">生成第一张图后，版本会出现在这里。</div>}
+          </section>
+        </div>
+      ) : null}
+      {brandOpen ? (
+        <div className="history-overlay" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setBrandOpen(false)}>
+          <section className="history-drawer brand-drawer" role="dialog" aria-modal="true" aria-label="品牌套装">
+            <div className="history-heading"><div><Palette size={18} /><h2>品牌套装</h2></div><button type="button" onClick={() => setBrandOpen(false)} aria-label="关闭品牌设置"><X size={18} /></button></div>
+            <p>名称、Logo、字体和颜色会自动保存并用于导出。</p>
+            <label className="brand-field"><span>品牌名称</span><input value={brandName} maxLength={12} onChange={(event) => setBrandName(event.target.value)} /></label>
+            <div className="brand-field"><span>品牌 Logo</span><label className="logo-upload"><input type="file" accept="image/*" onChange={(event) => loadLogo(event.target.files?.[0])} /><ImagePlus size={18} />{logoDataUrl ? "更换 Logo" : "上传 Logo"}</label>{logoDataUrl ? <button className="remove-logo" type="button" onClick={() => setLogoDataUrl("")}>移除</button> : null}</div>
+            <div className="brand-field"><span>图中文字</span><div className="font-options">{fontOptions.map((option) => <button key={option.value} type="button" className={fontChoice === option.value ? "font-option font-option--active" : "font-option"} style={{ fontFamily: option.family }} onClick={() => setFontChoice(option.value)}>{option.label}</button>)}</div></div>
+            <div className="brand-field"><span>主色</span><div className="brand-colors">{accents.map((color) => <button key={color} type="button" aria-label={`品牌颜色 ${color}`} className={accent === color ? "brand-color brand-color--active" : "brand-color"} style={{ background: color }} onClick={() => setAccent(color)} />)}</div></div>
+            <button className="brand-done" type="button" onClick={() => setBrandOpen(false)}>应用到当前图解</button>
           </section>
         </div>
       ) : null}

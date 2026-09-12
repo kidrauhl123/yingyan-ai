@@ -7,6 +7,9 @@ type Props = {
   spec: VisualSpec;
   type: VisualType;
   accent: string;
+  brandName: string;
+  logoDataUrl: string;
+  fontFamily: string;
   selectedItemId: string | null;
   onSelect: (item: VisualItem) => void;
 };
@@ -19,11 +22,13 @@ function truncate(value: string, length: number) {
   return value.length > length ? `${value.slice(0, length - 1)}…` : value;
 }
 
-function CanvasHeader({ spec, accent }: { spec: VisualSpec; accent: string }) {
+function CanvasHeader({ spec, accent, brandName, logoDataUrl }: Pick<Props, "spec" | "accent" | "brandName" | "logoDataUrl">) {
+  const labelX = logoDataUrl ? 86 : 56;
   return (
     <>
-      <text x="56" y="66" fill={muted} fontSize="13" fontWeight="600" letterSpacing="1.8">
-        映言 · VISUAL NOTE
+      {logoDataUrl ? <image href={logoDataUrl} x="56" y="45" width="22" height="22" preserveAspectRatio="xMidYMid meet" /> : null}
+      <text x={labelX} y="66" fill={muted} fontSize="13" fontWeight="600" letterSpacing="1.8">
+        {truncate(brandName || "映言", 12)} · VISUAL NOTE
       </text>
       <text x="56" y="112" fill={ink} fontSize="34" fontWeight="750">
         {truncate(spec.title, 20)}
@@ -44,7 +49,7 @@ function ProcessVisual(props: Props) {
   const gap = count > 1 ? (endX - startX) / (count - 1) : 0;
   return (
     <>
-      <CanvasHeader spec={spec} accent={accent} />
+      <CanvasHeader spec={spec} accent={accent} brandName={props.brandName} logoDataUrl={props.logoDataUrl} />
       <line x1={startX} y1="338" x2={endX} y2="338" stroke="#D8DEEA" strokeWidth="3" />
       {spec.items.map((item, index) => {
         const x = startX + gap * index;
@@ -88,7 +93,7 @@ function CardsVisual(props: Props) {
   const startX = cols === 2 ? 72 : 66;
   return (
     <>
-      <CanvasHeader spec={spec} accent={accent} />
+      <CanvasHeader spec={spec} accent={accent} brandName={props.brandName} logoDataUrl={props.logoDataUrl} />
       {spec.items.map((item, index) => {
         const col = index % cols;
         const row = Math.floor(index / cols);
@@ -117,7 +122,7 @@ function OrbitVisual(props: Props) {
   const radiusY = 145;
   return (
     <>
-      <CanvasHeader spec={spec} accent={accent} />
+      <CanvasHeader spec={spec} accent={accent} brandName={props.brandName} logoDataUrl={props.logoDataUrl} />
       <ellipse cx={centerX} cy={centerY} rx={radiusX} ry={radiusY} fill="none" stroke="#E0E5EF" strokeWidth="2" strokeDasharray="7 8" />
       <circle cx={centerX} cy={centerY} r="82" fill={ink} />
       <text x={centerX} y={centerY - 6} textAnchor="middle" fill="white" fontSize="17" fontWeight="700">核心结论</text>
@@ -142,7 +147,7 @@ function OrbitVisual(props: Props) {
 
 export function VisualCanvas(props: Props & { svgRef?: React.RefObject<SVGSVGElement | null>; compact?: boolean }) {
   const { svgRef, compact } = props;
-  const style = { "--accent": props.accent } as CSSProperties;
+  const style = { "--accent": props.accent, fontFamily: props.fontFamily } as CSSProperties;
   return (
     <svg
       ref={svgRef}
