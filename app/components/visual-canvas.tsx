@@ -145,6 +145,107 @@ function OrbitVisual(props: Props) {
   );
 }
 
+function StepsVisual(props: Props) {
+  const { spec, accent, selectedItemId, onSelect } = props;
+  const count = spec.items.length;
+  const baseY = 480;
+  const stepHeight = count > 1 ? 280 / (count - 1) : 0;
+  const startX = 80;
+  const gap = count > 1 ? 740 / (count - 1) : 0;
+  return (
+    <>
+      <CanvasHeader spec={spec} accent={accent} brandName={props.brandName} logoDataUrl={props.logoDataUrl} />
+      {spec.items.map((item, index) => {
+        const x = startX + gap * index;
+        const y = baseY - stepHeight * index;
+        const selected = item.id === selectedItemId;
+        return (
+          <g key={item.id} data-item-id={item.id} onClick={() => onSelect(item)} className="svg-item" tabIndex={0} role="button">
+            {index < count - 1 ? (
+              <line x1={x + 30} y1={y} x2={startX + gap * (index + 1) - 30} y2={baseY - stepHeight * (index + 1)} stroke={accent} strokeWidth="3" strokeDasharray="6 5" opacity="0.5" />
+            ) : null}
+            <rect x={x - 36} y={y - 28} width="72" height="56" rx="10" fill={selected ? accent : "white"} stroke={accent} strokeWidth={selected ? 0 : 2.5} />
+            <text x={x} y={y - 4} textAnchor="middle" fill={selected ? "white" : accent} fontSize="22" fontWeight="800">{index + 1}</text>
+            <text x={x} y={y + 16} textAnchor="middle" fill={selected ? "#E9EEFF" : muted} fontSize="11">{truncate(item.value || item.label, 8)}</text>
+            <text x={x} y={y + 48} textAnchor="middle" fill={ink} fontSize="14" fontWeight="700">{truncate(item.label, 8)}</text>
+            <text x={x} y={y + 66} textAnchor="middle" fill={muted} fontSize="11">{truncate(item.description, 12)}</text>
+          </g>
+        );
+      })}
+    </>
+  );
+}
+
+function SplitVisual(props: Props) {
+  const { spec, accent, selectedItemId, onSelect } = props;
+  const mid = Math.ceil(spec.items.length / 2);
+  const left = spec.items.slice(0, mid);
+  const right = spec.items.slice(mid);
+  const cardW = 360;
+  const leftX = 60;
+  const rightX = 480;
+  const renderCol = (items: VisualItem[], x: number) =>
+    items.map((item, index) => {
+      const y = 220 + index * 120;
+      const selected = item.id === selectedItemId;
+      return (
+        <g key={item.id} data-item-id={item.id} onClick={() => onSelect(item)} className="svg-item" tabIndex={0} role="button">
+          <rect x={x} y={y} width={cardW} height="100" rx="8" fill={selected ? `${accent}12` : "white"} stroke={selected ? accent : "#DFE4EE"} strokeWidth={selected ? 2.5 : 1.5} />
+          <rect x={x} y={y} width="6" height="100" rx="3" fill={accent} />
+          <text x={x + 24} y={y + 34} fill={ink} fontSize="16" fontWeight="750">{truncate(item.label, 14)}</text>
+          <text x={x + 24} y={y + 60} fill={muted} fontSize="12">{truncate(item.description, 28)}</text>
+          {item.value ? <text x={x + 24} y={y + 86} fill={accent} fontSize="14" fontWeight="750">{truncate(item.value, 16)}</text> : null}
+        </g>
+      );
+    });
+  return (
+    <>
+      <CanvasHeader spec={spec} accent={accent} brandName={props.brandName} logoDataUrl={props.logoDataUrl} />
+      <line x1="450" y1="200" x2="450" y2="560" stroke="#E0E5EF" strokeWidth="2" strokeDasharray="6 6" />
+      {renderCol(left, leftX)}
+      {renderCol(right, rightX)}
+    </>
+  );
+}
+
+function SignalVisual(props: Props) {
+  const { spec, accent, selectedItemId, onSelect } = props;
+  const count = spec.items.length;
+  const cardW = count > 0 ? Math.min(200, 760 / count) : 200;
+  const startX = (900 - cardW * count - 24 * (count - 1)) / 2;
+  return (
+    <>
+      <text x="450" y="90" textAnchor="middle" fill={muted} fontSize="13" fontWeight="600" letterSpacing="2">
+        {truncate(props.brandName || "映言", 12)} · VISUAL NOTE
+      </text>
+      <text x="450" y="160" textAnchor="middle" fill={ink} fontSize="38" fontWeight="800">
+        {truncate(spec.title, 18)}
+      </text>
+      <rect x="402" y="178" width="96" height="6" rx="3" fill={accent} />
+      <text x="450" y="218" textAnchor="middle" fill={accent} fontSize="18" fontWeight="700">
+        {truncate(spec.conclusion, 30)}
+      </text>
+      {spec.items.map((item, index) => {
+        const x = startX + index * (cardW + 24);
+        const selected = item.id === selectedItemId;
+        return (
+          <g key={item.id} data-item-id={item.id} onClick={() => onSelect(item)} className="svg-item" tabIndex={0} role="button">
+            <rect x={x} y="270" width={cardW} height="240" rx="14" fill={selected ? accent : "white"} stroke={accent} strokeWidth={selected ? 0 : 2} />
+            <circle cx={x + cardW / 2} cy="320" r="26" fill={selected ? "white" : accent} opacity={selected ? 1 : 0.12} />
+            <text x={x + cardW / 2} y="328" textAnchor="middle" fill={selected ? accent : "white"} fontSize="18" fontWeight="800">{index + 1}</text>
+            <text x={x + cardW / 2} y="380" textAnchor="middle" fill={selected ? "white" : ink} fontSize="16" fontWeight="750">{truncate(item.label, 8)}</text>
+            <text x={x + cardW / 2} y="410" textAnchor="middle" fill={selected ? "#E9EEFF" : muted} fontSize="12">{truncate(item.description, 14)}</text>
+            {item.value ? (
+              <text x={x + cardW / 2} y="450" textAnchor="middle" fill={selected ? "white" : accent} fontSize="22" fontWeight="800">{truncate(item.value, 10)}</text>
+            ) : null}
+          </g>
+        );
+      })}
+      <text x="450" y="554" textAnchor="middle" fill="#95A0B5" fontSize="12">点击任一节点，查看它在原文中的依据</text>
+    </>
+  );
+}
+
 export function VisualCanvas(props: Props & { svgRef?: React.RefObject<SVGSVGElement | null>; compact?: boolean }) {
   const { svgRef, compact } = props;
   const style = { "--accent": props.accent, fontFamily: props.fontFamily } as CSSProperties;
@@ -163,6 +264,9 @@ export function VisualCanvas(props: Props & { svgRef?: React.RefObject<SVGSVGEle
       {props.type === "process" ? <ProcessVisual {...props} /> : null}
       {props.type === "cards" ? <CardsVisual {...props} /> : null}
       {props.type === "orbit" ? <OrbitVisual {...props} /> : null}
+      {props.type === "steps" ? <StepsVisual {...props} /> : null}
+      {props.type === "split" ? <SplitVisual {...props} /> : null}
+      {props.type === "signal" ? <SignalVisual {...props} /> : null}
     </svg>
   );
 }
