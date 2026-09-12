@@ -148,10 +148,44 @@ function OrbitVisual(props: Props) {
 function StepsVisual(props: Props) {
   const { spec, accent, selectedItemId, onSelect } = props;
   const count = spec.items.length;
-  const baseY = 480;
-  const stepHeight = count > 1 ? 280 / (count - 1) : 0;
-  const startX = 80;
-  const gap = count > 1 ? 740 / (count - 1) : 0;
+  const vertical = count > 5;
+  if (vertical) {
+    const cols = 2;
+    const rows = Math.ceil(count / cols);
+    const cardW = 380;
+    const cardH = 90;
+    const colGap = 40;
+    const startX = (900 - (cardW * cols + colGap)) / 2;
+    const startY = 210;
+    const rowGap = 20;
+    return (
+      <>
+        <CanvasHeader spec={spec} accent={accent} brandName={props.brandName} logoDataUrl={props.logoDataUrl} />
+        {spec.items.map((item, index) => {
+          const col = index % cols;
+          const row = Math.floor(index / cols);
+          const x = startX + col * (cardW + colGap);
+          const y = startY + row * (cardH + rowGap);
+          const selected = item.id === selectedItemId;
+          return (
+            <g key={item.id} data-item-id={item.id} onClick={() => onSelect(item)} className="svg-item" tabIndex={0} role="button">
+              <rect x={x} y={y} width={cardW} height={cardH} rx="10" fill={selected ? `${accent}12` : "white"} stroke={selected ? accent : "#DFE4EE"} strokeWidth={selected ? 2.5 : 1.5} />
+              <rect x={x} y={y} width="6" height={cardH} rx="3" fill={accent} />
+              <circle cx={x + 32} cy={y + cardH / 2} r="18" fill={accent} opacity={selected ? 1 : 0.12} />
+              <text x={x + 32} y={y + cardH / 2 + 6} textAnchor="middle" fill={selected ? "white" : accent} fontSize="16" fontWeight="800">{index + 1}</text>
+              <text x={x + 62} y={y + 36} fill={ink} fontSize="16" fontWeight="750">{truncate(item.label, 16)}</text>
+              <text x={x + 62} y={y + 60} fill={muted} fontSize="12">{truncate(item.description, 30)}</text>
+              {item.value ? <text x={x + 62} y={y + 80} fill={accent} fontSize="13" fontWeight="700">{truncate(item.value, 18)}</text> : null}
+            </g>
+          );
+        })}
+      </>
+    );
+  }
+  const baseY = 470;
+  const stepHeight = count > 1 ? 240 / (count - 1) : 0;
+  const startX = 90;
+  const gap = count > 1 ? 720 / (count - 1) : 0;
   return (
     <>
       <CanvasHeader spec={spec} accent={accent} brandName={props.brandName} logoDataUrl={props.logoDataUrl} />
@@ -164,11 +198,11 @@ function StepsVisual(props: Props) {
             {index < count - 1 ? (
               <line x1={x + 30} y1={y} x2={startX + gap * (index + 1) - 30} y2={baseY - stepHeight * (index + 1)} stroke={accent} strokeWidth="3" strokeDasharray="6 5" opacity="0.5" />
             ) : null}
-            <rect x={x - 36} y={y - 28} width="72" height="56" rx="10" fill={selected ? accent : "white"} stroke={accent} strokeWidth={selected ? 0 : 2.5} />
+            <rect x={x - 38} y={y - 30} width="76" height="60" rx="10" fill={selected ? accent : "white"} stroke={accent} strokeWidth={selected ? 0 : 2.5} />
             <text x={x} y={y - 4} textAnchor="middle" fill={selected ? "white" : accent} fontSize="22" fontWeight="800">{index + 1}</text>
-            <text x={x} y={y + 16} textAnchor="middle" fill={selected ? "#E9EEFF" : muted} fontSize="11">{truncate(item.value || item.label, 8)}</text>
-            <text x={x} y={y + 48} textAnchor="middle" fill={ink} fontSize="14" fontWeight="700">{truncate(item.label, 8)}</text>
-            <text x={x} y={y + 66} textAnchor="middle" fill={muted} fontSize="11">{truncate(item.description, 12)}</text>
+            <text x={x} y={y + 17} textAnchor="middle" fill={selected ? "#E9EEFF" : muted} fontSize="11">{truncate(item.value || item.label, 8)}</text>
+            <text x={x} y={y + 52} textAnchor="middle" fill={ink} fontSize="14" fontWeight="700">{truncate(item.label, 8)}</text>
+            <text x={x} y={y + 70} textAnchor="middle" fill={muted} fontSize="11">{truncate(item.description, 12)}</text>
           </g>
         );
       })}
@@ -182,22 +216,29 @@ function SplitVisual(props: Props) {
   const left = spec.items.slice(0, mid);
   const right = spec.items.slice(mid);
   const cardW = 360;
+  const cardH = 104;
+  const rowGap = 16;
   const leftX = 60;
   const rightX = 480;
-  const renderCol = (items: VisualItem[], x: number) =>
-    items.map((item, index) => {
-      const y = 220 + index * 120;
+  const maxRows = Math.max(left.length, right.length);
+  const totalH = maxRows * cardH + (maxRows - 1) * rowGap;
+  const startY = 200 + (360 - totalH) / 2;
+  const renderCol = (items: VisualItem[], x: number) => {
+    const colStartY = startY + (maxRows - items.length) * (cardH + rowGap) / 2;
+    return items.map((item, index) => {
+      const y = colStartY + index * (cardH + rowGap);
       const selected = item.id === selectedItemId;
       return (
         <g key={item.id} data-item-id={item.id} onClick={() => onSelect(item)} className="svg-item" tabIndex={0} role="button">
-          <rect x={x} y={y} width={cardW} height="100" rx="8" fill={selected ? `${accent}12` : "white"} stroke={selected ? accent : "#DFE4EE"} strokeWidth={selected ? 2.5 : 1.5} />
-          <rect x={x} y={y} width="6" height="100" rx="3" fill={accent} />
+          <rect x={x} y={y} width={cardW} height={cardH} rx="8" fill={selected ? `${accent}12` : "white"} stroke={selected ? accent : "#DFE4EE"} strokeWidth={selected ? 2.5 : 1.5} />
+          <rect x={x} y={y} width="6" height={cardH} rx="3" fill={accent} />
           <text x={x + 24} y={y + 34} fill={ink} fontSize="16" fontWeight="750">{truncate(item.label, 14)}</text>
           <text x={x + 24} y={y + 60} fill={muted} fontSize="12">{truncate(item.description, 28)}</text>
           {item.value ? <text x={x + 24} y={y + 86} fill={accent} fontSize="14" fontWeight="750">{truncate(item.value, 16)}</text> : null}
         </g>
       );
     });
+  };
   return (
     <>
       <CanvasHeader spec={spec} accent={accent} brandName={props.brandName} logoDataUrl={props.logoDataUrl} />
@@ -211,37 +252,47 @@ function SplitVisual(props: Props) {
 function SignalVisual(props: Props) {
   const { spec, accent, selectedItemId, onSelect } = props;
   const count = spec.items.length;
-  const cardW = count > 0 ? Math.min(200, 760 / count) : 200;
-  const startX = (900 - cardW * count - 24 * (count - 1)) / 2;
+  const wrap = count > 4;
+  const cols = wrap ? Math.ceil(count / 2) : count;
+  const cardW = wrap ? 240 : Math.min(200, 760 / count);
+  const cardH = wrap ? 150 : 230;
+  const gapX = 24;
+  const gapY = 20;
+  const totalW = cols * cardW + (cols - 1) * gapX;
+  const startX = (900 - totalW) / 2;
+  const startY = wrap ? 250 : 270;
   return (
     <>
       <text x="450" y="90" textAnchor="middle" fill={muted} fontSize="13" fontWeight="600" letterSpacing="2">
         {truncate(props.brandName || "映言", 12)} · VISUAL NOTE
       </text>
-      <text x="450" y="160" textAnchor="middle" fill={ink} fontSize="38" fontWeight="800">
-        {truncate(spec.title, 18)}
+      <text x="450" y={wrap ? 150 : 160} textAnchor="middle" fill={ink} fontSize={wrap ? 32 : 38} fontWeight="800">
+        {truncate(spec.title, wrap ? 20 : 18)}
       </text>
-      <rect x="402" y="178" width="96" height="6" rx="3" fill={accent} />
-      <text x="450" y="218" textAnchor="middle" fill={accent} fontSize="18" fontWeight="700">
-        {truncate(spec.conclusion, 30)}
+      <rect x="402" y={wrap ? 168 : 178} width="96" height="6" rx="3" fill={accent} />
+      <text x="450" y={wrap ? 208 : 218} textAnchor="middle" fill={accent} fontSize="18" fontWeight="700">
+        {truncate(spec.conclusion, wrap ? 32 : 30)}
       </text>
       {spec.items.map((item, index) => {
-        const x = startX + index * (cardW + 24);
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        const x = startX + col * (cardW + gapX);
+        const y = startY + row * (cardH + gapY);
         const selected = item.id === selectedItemId;
         return (
           <g key={item.id} data-item-id={item.id} onClick={() => onSelect(item)} className="svg-item" tabIndex={0} role="button">
-            <rect x={x} y="270" width={cardW} height="240" rx="14" fill={selected ? accent : "white"} stroke={accent} strokeWidth={selected ? 0 : 2} />
-            <circle cx={x + cardW / 2} cy="320" r="26" fill={selected ? "white" : accent} opacity={selected ? 1 : 0.12} />
-            <text x={x + cardW / 2} y="328" textAnchor="middle" fill={selected ? accent : "white"} fontSize="18" fontWeight="800">{index + 1}</text>
-            <text x={x + cardW / 2} y="380" textAnchor="middle" fill={selected ? "white" : ink} fontSize="16" fontWeight="750">{truncate(item.label, 8)}</text>
-            <text x={x + cardW / 2} y="410" textAnchor="middle" fill={selected ? "#E9EEFF" : muted} fontSize="12">{truncate(item.description, 14)}</text>
+            <rect x={x} y={y} width={cardW} height={cardH} rx="14" fill={selected ? accent : "white"} stroke={accent} strokeWidth={selected ? 0 : 2} />
+            <circle cx={x + 30} cy={y + 32} r="18" fill={selected ? "white" : accent} opacity={selected ? 1 : 0.12} />
+            <text x={x + 30} y={y + 38} textAnchor="middle" fill={selected ? accent : "white"} fontSize="15" fontWeight="800">{index + 1}</text>
+            <text x={x + 58} y={y + 30} fill={selected ? "white" : ink} fontSize="16" fontWeight="750">{truncate(item.label, wrap ? 12 : 10)}</text>
+            <text x={x + 18} y={y + 64} fill={selected ? "#E9EEFF" : muted} fontSize="12">{truncate(item.description, wrap ? 22 : 16)}</text>
             {item.value ? (
-              <text x={x + cardW / 2} y="450" textAnchor="middle" fill={selected ? "white" : accent} fontSize="22" fontWeight="800">{truncate(item.value, 10)}</text>
+              <text x={x + cardW / 2} y={y + cardH - 20} textAnchor="middle" fill={selected ? "white" : accent} fontSize="20" fontWeight="800">{truncate(item.value, 12)}</text>
             ) : null}
           </g>
         );
       })}
-      <text x="450" y="554" textAnchor="middle" fill="#95A0B5" fontSize="12">点击任一节点，查看它在原文中的依据</text>
+      <text x="450" y="578" textAnchor="middle" fill="#95A0B5" fontSize="12">点击任一节点，查看它在原文中的依据</text>
     </>
   );
 }
