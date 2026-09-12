@@ -9,6 +9,8 @@ export const visualItemSchema = z.object({
   description: z.string().min(1).max(80),
   value: z.string().max(24).optional().default(""),
   sourceQuote: z.string().min(1).max(160),
+  role: z.enum(["core", "evidence", "action", "context"]).default("context"),
+  symbol: z.enum(["spark", "target", "growth", "people", "shield", "clock", "idea", "link"]).default("spark"),
 });
 
 export const visualSpecSchema = z.object({
@@ -18,7 +20,7 @@ export const visualSpecSchema = z.object({
   sourceText: z.string().default(""),
 });
 
-export const visualTypeSchema = z.enum(["process", "cards", "orbit"]);
+export const visualTypeSchema = z.enum(["process", "cards", "orbit", "split", "steps", "signal"]);
 
 export type VisualItem = z.infer<typeof visualItemSchema>;
 export type VisualSpec = z.infer<typeof visualSpecSchema>;

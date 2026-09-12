@@ -27,10 +27,10 @@ const demoSpec: VisualSpec = {
   conclusion: "AI 时代，表达结构正在成为新的效率瓶颈",
   sourceText: demoText,
   items: [
-    { id: "item-1", label: "输入原文", description: "保留完整上下文和事实", value: "01", sourceQuote: "输入原文" },
-    { id: "item-2", label: "识别结构", description: "提炼结论、证据与关系", value: "02", sourceQuote: "识别结构" },
-    { id: "item-3", label: "生成图解", description: "选择匹配内容的视觉语法", value: "03", sourceQuote: "生成视觉方案" },
-    { id: "item-4", label: "适配受众", description: "调整措辞和信息密度", value: "04", sourceQuote: "根据受众调整表达" },
+    { id: "item-1", label: "输入原文", description: "保留完整上下文和事实", value: "01", sourceQuote: "输入原文", role: "context", symbol: "idea" },
+    { id: "item-2", label: "识别结构", description: "提炼结论、证据与关系", value: "02", sourceQuote: "识别结构", role: "core", symbol: "target" },
+    { id: "item-3", label: "生成图解", description: "选择匹配内容的视觉语法", value: "03", sourceQuote: "生成视觉方案", role: "action", symbol: "spark" },
+    { id: "item-4", label: "适配受众", description: "调整措辞和信息密度", value: "04", sourceQuote: "根据受众调整表达", role: "action", symbol: "people" },
   ],
 };
 
@@ -43,8 +43,11 @@ const audienceOptions: { value: Audience; label: string; hint: string }[] = [
 
 const visualOptions: { value: VisualType; label: string; note: string }[] = [
   { value: "process", label: "路径", note: "适合步骤与变化" },
-  { value: "cards", label: "摘要", note: "适合并列观点" },
-  { value: "orbit", label: "焦点", note: "适合中心主题" },
+  { value: "cards", label: "编辑版", note: "适合并列观点" },
+  { value: "orbit", label: "星图", note: "适合中心主题" },
+  { value: "split", label: "对照", note: "适合两类信息" },
+  { value: "steps", label: "阶梯", note: "适合递进关系" },
+  { value: "signal", label: "信号", note: "适合强结论" },
 ];
 
 const accents = ["#315EFB", "#F05A3D", "#12856A", "#8C4FF7", "#C58A13"];
@@ -56,6 +59,7 @@ type HistoryEntry = {
   spec: VisualSpec;
   text: string;
   visualType: VisualType;
+  availableTypes: VisualType[];
   accent: string;
   brandName: string;
   logoDataUrl: string;
@@ -84,6 +88,7 @@ export function VisualStudio() {
   const [audience, setAudience] = useState<Audience>("leader");
   const [spec, setSpec] = useState<VisualSpec>(demoSpec);
   const [visualType, setVisualType] = useState<VisualType>("process");
+  const [availableTypes, setAvailableTypes] = useState<VisualType[]>(["process", "cards", "orbit"]);
   const [accent, setAccent] = useState(accents[0]);
   const [selectedItem, setSelectedItem] = useState<VisualItem | null>(null);
   const [instruction, setInstruction] = useState("");
@@ -110,6 +115,7 @@ export function VisualStudio() {
         if (state.spec) setSpec(state.spec);
         if (state.audience) setAudience(state.audience);
         if (state.visualType) setVisualType(state.visualType);
+        if (state.availableTypes) setAvailableTypes(state.availableTypes);
         if (state.accent) setAccent(state.accent);
         if (state.brandName) setBrandName(state.brandName);
         if (state.logoDataUrl) setLogoDataUrl(state.logoDataUrl);
@@ -126,14 +132,14 @@ export function VisualStudio() {
 
   useEffect(() => {
     if (!storageReadyRef.current) return;
-    localStorage.setItem("yingyan-latest", JSON.stringify({ text, spec, audience, visualType, accent, brandName, logoDataUrl, fontChoice }));
+    localStorage.setItem("yingyan-latest", JSON.stringify({ text, spec, audience, visualType, availableTypes, accent, brandName, logoDataUrl, fontChoice }));
     const showTimer = window.setTimeout(() => setSaved(true), 0);
     const timer = window.setTimeout(() => setSaved(false), 900);
     return () => {
       window.clearTimeout(showTimer);
       window.clearTimeout(timer);
     };
-  }, [text, spec, audience, visualType, accent, brandName, logoDataUrl, fontChoice]);
+  }, [text, spec, audience, visualType, availableTypes, accent, brandName, logoDataUrl, fontChoice]);
 
   function addHistory(nextSpec: VisualSpec, nextText = text, nextType = visualType) {
     setHistory((current) => {
@@ -144,6 +150,7 @@ export function VisualStudio() {
         spec: nextSpec,
         text: nextText,
         visualType: nextType,
+        availableTypes,
         accent,
         brandName,
         logoDataUrl,
@@ -159,6 +166,7 @@ export function VisualStudio() {
     setText(entry.text);
     setSpec(entry.spec);
     setVisualType(entry.visualType);
+    setAvailableTypes(entry.availableTypes || ["process", "cards", "orbit"]);
     setAccent(entry.accent);
     setBrandName(entry.brandName || "映言");
     setLogoDataUrl(entry.logoDataUrl || "");
@@ -196,6 +204,7 @@ export function VisualStudio() {
       if (!response.ok) throw new Error(payload.error || "生成失败");
       setSpec(payload.spec);
       setVisualType(payload.suggestedTypes[0]);
+      setAvailableTypes(payload.suggestedTypes);
       addHistory(payload.spec, text, payload.suggestedTypes[0]);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "生成失败，请重试。");
@@ -345,7 +354,7 @@ export function VisualStudio() {
         <section className="canvas-panel">
           <div className="canvas-toolbar">
             <div className="variant-tabs">
-              {visualOptions.map((option) => (
+              {availableTypes.map((type) => visualOptions.find((option) => option.value === type)!).map((option) => (
                 <button
                   key={option.value}
                   type="button"

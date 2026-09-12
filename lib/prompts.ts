@@ -18,11 +18,14 @@ ${audienceGuidance[audience]}
 3. 每一项的 sourceQuote 必须逐字摘录原文中支持该项的短句。
 4. label 不超过 12 个汉字，description 不超过 36 个汉字。
 5. conclusion 是整张图最重要的一句话，不超过 32 个汉字。
-6. suggestedTypes 必须恰好为 ["process","cards","orbit"]，顺序可根据最适合程度调整。
-7. id 使用 item-1、item-2 这样的稳定格式。
+6. 为每项判断 role：core=核心结论，evidence=证据，action=行动，context=背景。
+7. 为每项选择语义 symbol：spark、target、growth、people、shield、clock、idea、link。
+8. 从 process（路径）、cards（编辑摘要）、orbit（中心星图）、split（对照）、steps（递进阶梯）、signal（强结论海报）中选择恰好三种不同构图。根据内容决定，不要固定组合。
+9. 有明显顺序时优先 process/steps；有两类对立信息时优先 split；有强结论或数字时优先 signal；中心主题辐射时优先 orbit。
+10. id 使用 item-1、item-2 这样的稳定格式。
 
 仅返回 JSON，不要 Markdown，不要解释，结构如下：
-{"spec":{"title":"","conclusion":"","items":[{"id":"item-1","label":"","description":"","value":"","sourceQuote":""}],"sourceText":""},"suggestedTypes":["process","cards","orbit"]}
+{"spec":{"title":"","conclusion":"","items":[{"id":"item-1","label":"","description":"","value":"","sourceQuote":"","role":"core","symbol":"target"}],"sourceText":""},"suggestedTypes":["signal","split","cards"]}
 
 原文：
 ${text}`;
