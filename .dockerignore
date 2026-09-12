@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.gitignore
+.env*
+!.env.example
+*.log
+.DS_Store
+.playwright-cli
+output
+README.md
+CLAUDE.md
+AGENTS.md
+OPEN_SOURCE_NOTES.md
